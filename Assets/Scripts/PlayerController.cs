@@ -25,14 +25,48 @@ public class PlayerController : MonoBehaviour
         MovementHandler();
     }
 
+    (float, float) MovementInputHandler() {
+        float v = 0;
+        float h = 0;
+        if (Input.GetKey(KeyCode.W)){
+            v = 1;
+        }
+        if (Input.GetKey(KeyCode.S)) {
+            v = -1;
+        }
+        if (Input.GetKey(KeyCode.A)) {
+            h = -1;
+        }
+        if (Input.GetKey(KeyCode.D)) {
+            h = 1;
+        }
+        if (Mathf.Abs(h) + Mathf.Abs(v) > 1) {
+            h *= 0.5F;
+            v *= 0.5F;
+        }
+        return (h, v);
+    }
     void MovementHandler() {
-        float h = Input.GetAxisRaw("Horizontal");
-        float v = Input.GetAxisRaw("Vertical");
+
 
         Rigidbody rb = GetComponent<Rigidbody>();
-        float magnitude = rb.velocity.magnitude;
-        if !()
+        var locVel = transform.InverseTransformDirection(rb.velocity);
+        (float h, float v) = MovementInputHandler();
+        float x = locVel.x;
+        float z = locVel.z;
+
+
+        if (Mathf.Abs(locVel.x) < movementSpeed) {
+            x += h * acceleration;
+        } 
         
+        if (Mathf.Abs(locVel.z) < movementSpeed) {
+            z += v * acceleration;
+        } 
+
+        locVel = new Vector3(x, locVel.y, z);
+        rb.velocity = transform.TransformDirection(locVel);
+
     }
 
     void CameraHandler() {
