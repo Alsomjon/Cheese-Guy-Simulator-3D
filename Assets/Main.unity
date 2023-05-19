@@ -195,8 +195,12 @@ MonoBehaviour:
   movementSpeed: 10
   runModifier: 1.5
   crouchModifier: 0.5
+  slideModifier: 2
+  slideDragModifier: 0
   movementState: 1
   aerialState: 1
+  minSlope: 0
+  maxSlope: 0
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0

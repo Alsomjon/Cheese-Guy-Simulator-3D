@@ -21,13 +21,14 @@ public class PlayerController : MonoBehaviour
     public float movementSpeed;
     public float runModifier;
     public float crouchModifier;
+    public float slideModifier;
+    public float slideDragModifier;
 
-    [Header("Slope Handler")]
-    public float slopeModifier;
     public enum MovementState {
         Crouching,
         Walking,
         Running,
+        Sliding,
     }
     public MovementState movementState = MovementState.Walking;
     public enum AerialState {
@@ -36,8 +37,18 @@ public class PlayerController : MonoBehaviour
     }
     
     public AerialState aerialState = AerialState.Air;
+
+    [Header("Slope Handler")]
+
+    public float minSlope;
+
+    public float maxSlope;
     
-    
+    Rigidbody rb;
+
+    void Start() {
+        rb = GetComponent<Rigidbody>();
+    }
     void Update() {
         CameraHandler();
         MovementHandler();
@@ -81,13 +92,14 @@ public class PlayerController : MonoBehaviour
     }
 
     (float, float) CalculateSlope() {
-
         RaycastHit rchit;
         Physics.Raycast(transform.position, -Vector3.up, out rchit);
         float slopeAngle = Vector3.Angle(Vector3.up, rchit.normal);
         float slopeDirection = Mathf.Atan2(rchit.normal.x, rchit.normal.z) * Mathf.Rad2Deg;
         return (slopeAngle, slopeDirection);
     }
+  
+
     (float, float) MovementInputHandler() {
         float v = 0;
         float h = 0;
@@ -110,30 +122,42 @@ public class PlayerController : MonoBehaviour
             v *= 0.5F;
         }
         // Handles setting movementStates and changing velocities based on those.
-        if (Input.GetKey(KeyCode.LeftControl)) {
-            Crouch();
-            movementState = MovementState.Crouching;
-            h *= crouchModifier;
-            v *= crouchModifier;
-        } else {
-            UnCrouch();
-            if (Input.GetKey(KeyCode.LeftShift)) {
-                movementState = MovementState.Running;
-                if (v > 0) {
-                    v *= runModifier;
+        (float slope, float slopeDirection) = CalculateSlope();
+        if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift) && v >= 1) {
+            if (movementState != MovementState.Sliding) {
+                rb.drag = slideDragModifier;
+                rb.AddForce(transform.forward * slideModifier, ForceMode.Impulse);
+                movementState = MovementState.Sliding;
+                if (slopeDirection < 0) {
+                    slopeDirection += 360;
                 }
+            }
+        } else {
+            rb.drag = movementSpeed;
+            if (Input.GetKey(KeyCode.LeftControl)) {
+                Crouch();
+                movementState = MovementState.Crouching;
+                h *= crouchModifier;
+                v *= crouchModifier;
             } else {
-                movementState = MovementState.Walking;
+                UnCrouch();
+                if (Input.GetKey(KeyCode.LeftShift)) {
+                    movementState = MovementState.Running;
+                    if (v > 0) {
+                        v *= runModifier;
+                    }
+                } else {
+                    movementState = MovementState.Walking;
+                }
             }
         }
-        (float slope, float slopeDirection) = CalculateSlope();
+
+
         // Handles changing velocity on a slope
         return (h, v);
     }
     void MovementHandler() {
 
-
-        Rigidbody rb = GetComponent<Rigidbody>();
         rb.drag = movementSpeed;
         var locVel = transform.InverseTransformDirection(rb.velocity);
         (float h, float v) = MovementInputHandler();
